@@ -4,7 +4,7 @@
   "mandatory": true,
   "notes": "Release Alpha",
   "package": {
-    "url": "https://1drv.ms/f/c/6b6cbbbd75eca53c/IgAhaMw4aTYIQrryRcDP9joqAa5B-JbVoB__r4TqG0J3Hw0?e=CsMhAA?download=1",
+    "url": "https://github.com/faelrisdev/doomsoul-updates/releases/tag/Alpha",
     "sha256": "",
     "fileName": "Doomsoul_Windows.zip",
     "extractTo": "."
