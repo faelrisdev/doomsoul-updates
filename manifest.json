@@ -1,10 +1,10 @@
 {
-  "version": "0.1.1",
+  "version": "0.1.2",
   "minimumLauncherVersion": "0.0.0",
   "mandatory": true,
-  "notes": "Corrected Angel skin and resized orb symbols",
+  "notes": "Implemented shop",
   "package": {
-    "url": "https://github.com/faelrisdev/doomsoul-updates/releases/download/Alpha-0.1.1/Doomsoul.zip",
+    "url": "https://github.com/faelrisdev/doomsoul-updates/releases/download/Alpha-0.1.2/Doomsoul.zip",
     "sha256": "",
     "fileName": "Doomsoul_Windows.zip",
     "extractTo": "."
