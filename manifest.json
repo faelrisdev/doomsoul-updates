@@ -1,10 +1,10 @@
 {
-  "version": "0.1.39",
+  "version": "0.1.391",
   "minimumLauncherVersion": "0.0.0",
   "mandatory": true,
   "notes": "Accounts bugfix",
   "package": {
-    "url": "https://github.com/faelrisdev/doomsoul-updates/releases/download/Alpha-0.1.39/Doomsoul.zip",
+    "url": "https://github.com/faelrisdev/doomsoul-updates/releases/download/Alpha-0.1.391/Doomsoul.zip",
     "sha256": "",
     "fileName": "Doomsoul_Windows.zip",
     "extractTo": "."
