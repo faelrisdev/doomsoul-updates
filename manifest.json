@@ -3,9 +3,10 @@
   "minimumLauncherVersion": "0.0.0",
   "mandatory": true,
   "notes": [
-    "Added Discord bug reports.",
-    "Fixed remember username in launcher.",
-    "Blocked game launch until updates are completed."
+    "Added Discord webhooks",
+    "Added Bug Report button to the launcher",
+    "Added new laser synergy",
+    "Adjusted rank calibration"
   ],
   "package": {
     "url": "https://github.com/faelrisdev/doomsoul-updates/releases/download/Alpha-0.1.4/Doomsoul.zip",
