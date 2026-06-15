@@ -2,7 +2,11 @@
   "version": "0.1.4",
   "minimumLauncherVersion": "0.0.0",
   "mandatory": true,
-  "notes": "Accounts bugfix",
+  "notes": [
+    "Added Discord bug reports.",
+    "Fixed remember username in launcher.",
+    "Blocked game launch until updates are completed."
+  ]
   "package": {
     "url": "https://github.com/faelrisdev/doomsoul-updates/releases/download/Alpha-0.1.4/Doomsoul.zip",
     "sha256": "",
