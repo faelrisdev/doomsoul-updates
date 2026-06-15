@@ -1,0 +1,97 @@
+name: Discord Patch Notes
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "manifest.json"
+  workflow_dispatch:
+
+jobs:
+  notify-discord:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Send patch notes to Discord
+        env:
+          WEBHOOK_URL: ${{ secrets.DISCORD_PATCH_NOTES_WEBHOOK }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import urllib.request
+          from pathlib import Path
+
+          manifest_path = Path("manifest.json")
+
+          if not manifest_path.exists():
+              raise SystemExit("manifest.json not found")
+
+          manifest = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
+
+          def pick(*keys, default=None):
+              for key in keys:
+                  value = manifest.get(key)
+                  if value not in (None, "", []):
+                      return value
+              return default
+
+          version = pick(
+              "version",
+              "gameVersion",
+              "latestVersion",
+              "currentVersion",
+              default="Unknown version"
+          )
+
+          notes = pick(
+              "patchNotes",
+              "patch_notes",
+              "notes",
+              "changelog",
+              default=[]
+          )
+
+          if isinstance(notes, list):
+              notes_text = "\n".join(f"• {str(note)}" for note in notes)
+          else:
+              notes_text = str(notes).strip()
+
+          if not notes_text:
+              notes_text = "No patch notes were provided in the manifest."
+
+          if len(notes_text) > 3900:
+              notes_text = notes_text[:3900] + "\n…"
+
+          payload = {
+              "username": "Doomsoul Patch Notes",
+              "allowed_mentions": {
+                  "parse": []
+              },
+              "embeds": [
+                  {
+                      "title": f"📢 Doomsoul Update {version}",
+                      "description": notes_text,
+                      "footer": {
+                          "text": "Update available through the Doomsoul Launcher"
+                      }
+                  }
+              ]
+          }
+
+          data = json.dumps(payload).encode("utf-8")
+          req = urllib.request.Request(
+              os.environ["WEBHOOK_URL"],
+              data=data,
+              headers={"Content-Type": "application/json"},
+              method="POST"
+          )
+
+          with urllib.request.urlopen(req) as response:
+              if response.status not in (200, 204):
+                  raise SystemExit(f"Discord webhook failed: HTTP {response.status}")
+          PY
