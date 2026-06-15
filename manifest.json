@@ -1,15 +1,12 @@
 {
-  "version": "0.2.0",
+  "version": "0.2.1",
   "minimumLauncherVersion": "0.0.0",
   "mandatory": true,
   "notes": [
-    "Added Discord webhooks",
-    "Added Bug Report button to the launcher",
-    "Added new laser synergy",
-    "Adjusted rank calibration"
+    "Ranked Recalibration",
   ],
   "package": {
-    "url": "https://github.com/faelrisdev/doomsoul-updates/releases/download/Alpha-0.1.4/Doomsoul.zip",
+    "url": "https://github.com/faelrisdev/doomsoul-updates/releases/download/Alpha-0.2.1/Doomsoul.zip",
     "sha256": "",
     "fileName": "Doomsoul_Windows.zip",
     "extractTo": "."
