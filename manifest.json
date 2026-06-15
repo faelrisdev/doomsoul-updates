@@ -2,7 +2,10 @@
   "version": "0.2.1",
   "minimumLauncherVersion": "0.0.0",
   "mandatory": true,
-  "notes": "Ranked Recalibration",
+  "notes": [
+    "Ranked Recalibration",
+     ""
+  ],
   "package": {
     "url": "https://github.com/faelrisdev/doomsoul-updates/releases/download/Alpha-0.2.1/Doomsoul.zip",
     "sha256": "",
