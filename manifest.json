@@ -5,7 +5,7 @@
   "notes": [
     "Corrected doubled score feedbacks",
     "Corrected effects that last after death",
-    "Signed game for alpha release",
+    "Signed game for alpha release"
   ],
   "package": {
     "url": "https://github.com/faelrisdev/doomsoul-updates/releases/download/Alpha-0.2.2/Doomsoul.zip",
