@@ -3,7 +3,8 @@
   "minimumLauncherVersion": "0.0.0",
   "mandatory": true,
   "notes": [
-    "Ranked Recalibration"
+    "Corrected doubled score feedbacks",
+    "Corrected effects that last after death",
   ],
   "package": {
     "url": "https://github.com/faelrisdev/doomsoul-updates/releases/download/Alpha-0.2.1/Doomsoul.zip",
