@@ -1,0 +1,239 @@
+name: Discord Highscore Top 1
+
+on:
+  schedule:
+    - cron: "3,8,13,18,23,28,33,38,43,48,53,58 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  check-top1:
+    runs-on: ubuntu-latest
+
+    env:
+      TALO_LEADERBOARD_INTERNAL_NAME: "solo_high_score"
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Check Talo leaderboard and notify Discord
+        env:
+          TALO_ACCESS_KEY: ${{ secrets.TALO_ACCESS_KEY }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_HIGHSCORE_WEBHOOK }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import urllib.parse
+          import urllib.request
+          from pathlib import Path
+          from datetime import datetime, timezone
+
+          leaderboard_name = os.environ["TALO_LEADERBOARD_INTERNAL_NAME"].strip()
+          talo_access_key = os.environ["TALO_ACCESS_KEY"].strip()
+          discord_webhook_url = os.environ["DISCORD_WEBHOOK_URL"].strip()
+
+          state_path = Path(".github/state/talo_top1.json")
+          state_path.parent.mkdir(parents=True, exist_ok=True)
+
+          query = urllib.parse.urlencode({
+              "page": "0",
+              "withDeleted": "false"
+          })
+
+          url = (
+              "https://api.trytalo.com/v1/leaderboards/"
+              + urllib.parse.quote(leaderboard_name, safe="")
+              + "/entries?"
+              + query
+          )
+
+          headers = {
+              "Accept": "application/json",
+              "Authorization": f"Bearer {talo_access_key}"
+          }
+
+          req = urllib.request.Request(url, headers=headers, method="GET")
+
+          with urllib.request.urlopen(req) as response:
+              raw = response.read().decode("utf-8")
+              data = json.loads(raw)
+
+          def extract_entries(payload):
+              if isinstance(payload, list):
+                  return payload
+
+              if not isinstance(payload, dict):
+                  return []
+
+              if isinstance(payload.get("entries"), list):
+                  return payload["entries"]
+
+              if isinstance(payload.get("data"), list):
+                  return payload["data"]
+
+              if isinstance(payload.get("data"), dict):
+                  nested = payload["data"]
+                  if isinstance(nested.get("entries"), list):
+                      return nested["entries"]
+
+              if isinstance(payload.get("items"), list):
+                  return payload["items"]
+
+              if isinstance(payload.get("results"), list):
+                  return payload["results"]
+
+              return []
+
+          entries = extract_entries(data)
+
+          if not entries:
+              print("No leaderboard entries found.")
+              raise SystemExit(0)
+
+          top3 = entries[:3]
+
+          def get_score(entry):
+              value = entry.get("score", entry.get("value", 0))
+              try:
+                  if float(value).is_integer():
+                      return str(int(float(value)))
+                  return str(value)
+              except Exception:
+                  return str(value)
+
+          def get_player_name(entry):
+              candidates = []
+
+              for key in ("alias", "playerAlias", "player_alias"):
+                  alias = entry.get(key)
+                  if isinstance(alias, dict):
+                      candidates.extend([
+                          alias.get("identifier"),
+                          alias.get("username"),
+                          alias.get("name"),
+                          alias.get("displayName"),
+                          alias.get("display_name")
+                      ])
+                  elif isinstance(alias, str):
+                      candidates.append(alias)
+
+              player = entry.get("player")
+              if isinstance(player, dict):
+                  candidates.extend([
+                      player.get("username"),
+                      player.get("name"),
+                      player.get("displayName"),
+                      player.get("display_name")
+                  ])
+
+              candidates.extend([
+                  entry.get("username"),
+                  entry.get("playerName"),
+                  entry.get("player_name"),
+                  entry.get("displayName"),
+                  entry.get("display_name"),
+                  entry.get("name")
+              ])
+
+              for candidate in candidates:
+                  if candidate:
+                      return str(candidate)
+
+              return "Unknown player"
+
+          def entry_identity(entry):
+              entry_id = entry.get("id") or entry.get("_id")
+              player = get_player_name(entry)
+              score = get_score(entry)
+              return f"{entry_id or player}:{score}"
+
+          current_top1 = top3[0]
+          current_top1_id = entry_identity(current_top1)
+
+          previous_state = {}
+          if state_path.exists():
+              previous_state = json.loads(state_path.read_text(encoding="utf-8"))
+
+          previous_top1_id = previous_state.get("top1Id")
+
+          new_state = {
+              "top1Id": current_top1_id,
+              "leaderboard": leaderboard_name,
+              "player": get_player_name(current_top1),
+              "score": get_score(current_top1),
+              "checkedAt": datetime.now(timezone.utc).isoformat()
+          }
+
+          state_path.write_text(
+              json.dumps(new_state, indent=2, ensure_ascii=False),
+              encoding="utf-8"
+          )
+
+          # First run only seeds the current top 1 without spamming Discord.
+          if not previous_top1_id:
+              print("Initial top 1 state saved. No Discord notification sent.")
+              raise SystemExit(0)
+
+          if previous_top1_id == current_top1_id:
+              print("Top 1 unchanged. No Discord notification sent.")
+              raise SystemExit(0)
+
+          lines = []
+          medals = ["🥇", "🥈", "🥉"]
+
+          for index, entry in enumerate(top3):
+              lines.append(
+                  f"{medals[index]} **#{index + 1} {get_player_name(entry)}** — `{get_score(entry)}`"
+              )
+
+          description = "\n".join(lines)
+
+          payload = {
+              "username": "Doomsoul Leaderboard",
+              "content": "🏆 **NEW DOOMSOUL TOP 1!**",
+              "allowed_mentions": {
+                  "parse": []
+              },
+              "embeds": [
+                  {
+                      "title": "🏆 New Leaderboard Champion",
+                      "description": description,
+                      "footer": {
+                          "text": f"Leaderboard: {leaderboard_name}"
+                      }
+                  }
+              ]
+          }
+
+          discord_data = json.dumps(payload).encode("utf-8")
+          discord_req = urllib.request.Request(
+              discord_webhook_url,
+              data=discord_data,
+              headers={"Content-Type": "application/json"},
+              method="POST"
+          )
+
+          with urllib.request.urlopen(discord_req) as response:
+              if response.status not in (200, 204):
+                  raise SystemExit(f"Discord webhook failed: HTTP {response.status}")
+
+          print("New top 1 notification sent.")
+          PY
+
+      - name: Commit updated top 1 state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add .github/state/talo_top1.json
+
+          if git diff --cached --quiet; then
+            echo "No state change to commit."
+          else
+            git commit -m "ci: update Talo top 1 state"
+            git push
+          fi
