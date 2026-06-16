@@ -1,13 +1,13 @@
 {
-  "version": "0.2.4",
+  "version": "0.2.5",
   "minimumLauncherVersion": "0.0.0",
   "mandatory": true,
   "notes": [
-    "Bugfix of score sending mechanic",
-    "Bugfix of ranked placements\n\nJoin our Discord: https://discord.gg/Eyx5p22tc\n\nThought of the patch:\nTime is a limited resource, do what you want to accomplish while you can."
+    "Corrected display bug on rival ranked leaderboard",
+    "\n\nJoin our Discord: https://discord.gg/Eyx5p22tc\n\nThought of the patch:\nNever lose hope, stay strong, life is full of surprises."
   ],
   "package": {
-    "url": "https://github.com/faelrisdev/doomsoul-updates/releases/download/Alpha-0.2.4/Doomsoul.zip",
+    "url": "https://github.com/faelrisdev/doomsoul-updates/releases/download/Alpha-0.2.5/Doomsoul.zip",
     "sha256": "",
     "fileName": "Doomsoul_Windows.zip",
     "extractTo": "."
