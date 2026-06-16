@@ -1,14 +1,12 @@
 {
-  "version": "0.2.2",
+  "version": "0.2.3",
   "minimumLauncherVersion": "0.0.0",
   "mandatory": true,
   "notes": [
-    "Corrected doubled score feedbacks",
-    "Corrected effects that last after death",
-    "Signed game for alpha release"
+    "Corrected hitboxes"
   ],
   "package": {
-    "url": "https://github.com/faelrisdev/doomsoul-updates/releases/download/Alpha-0.2.2/Doomsoul.zip",
+    "url": "https://github.com/faelrisdev/doomsoul-updates/releases/download/Alpha-0.2.3/Doomsoul.zip",
     "sha256": "",
     "fileName": "Doomsoul_Windows.zip",
     "extractTo": "."
