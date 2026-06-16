@@ -3,8 +3,7 @@
   "minimumLauncherVersion": "0.0.0",
   "mandatory": true,
   "notes": [
-    "Corrected display bug on rival ranked leaderboard",
-    "\n\nJoin our Discord: https://discord.gg/Eyx5p22tc\n\nThought of the patch:\nNever lose hope, stay strong, life is full of surprises."
+    "Corrected display bug on rival ranked leaderboard\n\nJoin our Discord: https://discord.gg/Eyx5p22tc\n\nThought of the patch:\nNever lose hope, stay strong, life is full of surprises."
   ],
   "package": {
     "url": "https://github.com/faelrisdev/doomsoul-updates/releases/download/Alpha-0.2.5/Doomsoul.zip",
