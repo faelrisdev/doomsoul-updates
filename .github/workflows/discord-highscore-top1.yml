@@ -29,6 +29,7 @@ jobs:
           import os
           import urllib.parse
           import urllib.request
+          import urllib.error
           from pathlib import Path
           from datetime import datetime, timezone
 
@@ -36,31 +37,63 @@ jobs:
           talo_access_key = os.environ["TALO_ACCESS_KEY"].strip()
           discord_webhook_url = os.environ["DISCORD_WEBHOOK_URL"].strip()
 
+          if not leaderboard_name:
+              raise SystemExit("TALO_LEADERBOARD_INTERNAL_NAME is empty")
+
+          if not talo_access_key:
+              raise SystemExit("TALO_ACCESS_KEY secret is empty")
+
+          if not discord_webhook_url:
+              raise SystemExit("DISCORD_HIGHSCORE_WEBHOOK secret is empty")
+
           state_path = Path(".github/state/talo_top1.json")
           state_path.parent.mkdir(parents=True, exist_ok=True)
 
-          query = urllib.parse.urlencode({
-              "page": "0",
-              "withDeleted": "false"
-          })
+          def fetch_talo_entries():
+              base_url = (
+                  "https://api.trytalo.com/v1/leaderboards/"
+                  + urllib.parse.quote(leaderboard_name, safe="")
+                  + "/entries"
+              )
 
-          url = (
-              "https://api.trytalo.com/v1/leaderboards/"
-              + urllib.parse.quote(leaderboard_name, safe="")
-              + "/entries?"
-              + query
-          )
+              query_variants = [
+                  {"page": "0", "withDeleted": "false"},
+                  {"page": "0", "withDeleted": "0"},
+                  {"page": "0", "withDeleted": "true"}
+              ]
 
-          headers = {
-              "Accept": "application/json",
-              "Authorization": f"Bearer {talo_access_key}"
-          }
+              last_error = None
 
-          req = urllib.request.Request(url, headers=headers, method="GET")
+              for query_params in query_variants:
+                  query = urllib.parse.urlencode(query_params)
+                  url = base_url + "?" + query
 
-          with urllib.request.urlopen(req) as response:
-              raw = response.read().decode("utf-8")
-              data = json.loads(raw)
+                  print(f"Trying Talo URL: {url}")
+
+                  req = urllib.request.Request(
+                      url,
+                      headers={
+                          "Accept": "application/json",
+                          "Authorization": f"Bearer {talo_access_key}",
+                          "User-Agent": "Doomsoul-GitHubAction/1.0"
+                      },
+                      method="GET"
+                  )
+
+                  try:
+                      with urllib.request.urlopen(req) as response:
+                          raw = response.read().decode("utf-8")
+                          print("Talo request succeeded.")
+                          return json.loads(raw)
+
+                  except urllib.error.HTTPError as e:
+                      body = e.read().decode("utf-8", errors="replace")
+                      last_error = f"HTTP {e.code}: {body}"
+                      print(f"Talo request failed with {last_error}")
+
+              raise SystemExit("All Talo request variants failed. Last error: " + str(last_error))
+
+          data = fetch_talo_entries()
 
           def extract_entries(payload):
               if isinstance(payload, list):
@@ -69,22 +102,18 @@ jobs:
               if not isinstance(payload, dict):
                   return []
 
-              if isinstance(payload.get("entries"), list):
-                  return payload["entries"]
+              for key in ("entries", "items", "results"):
+                  if isinstance(payload.get(key), list):
+                      return payload[key]
 
-              if isinstance(payload.get("data"), list):
-                  return payload["data"]
+              nested = payload.get("data")
+              if isinstance(nested, list):
+                  return nested
 
-              if isinstance(payload.get("data"), dict):
-                  nested = payload["data"]
-                  if isinstance(nested.get("entries"), list):
-                      return nested["entries"]
-
-              if isinstance(payload.get("items"), list):
-                  return payload["items"]
-
-              if isinstance(payload.get("results"), list):
-                  return payload["results"]
+              if isinstance(nested, dict):
+                  for key in ("entries", "items", "results"):
+                      if isinstance(nested.get(key), list):
+                          return nested[key]
 
               return []
 
@@ -92,6 +121,8 @@ jobs:
 
           if not entries:
               print("No leaderboard entries found.")
+              print("Raw Talo payload:")
+              print(json.dumps(data, indent=2, ensure_ascii=False)[:4000])
               raise SystemExit(0)
 
           top3 = entries[:3]
@@ -99,27 +130,37 @@ jobs:
           def get_score(entry):
               value = entry.get("score", entry.get("value", 0))
               try:
-                  if float(value).is_integer():
-                      return str(int(float(value)))
-                  return str(value)
+                  number = float(value)
+                  if number.is_integer():
+                      return str(int(number))
+                  return str(number)
               except Exception:
                   return str(value)
 
           def get_player_name(entry):
               candidates = []
 
-              for key in ("alias", "playerAlias", "player_alias"):
-                  alias = entry.get(key)
-                  if isinstance(alias, dict):
-                      candidates.extend([
-                          alias.get("identifier"),
-                          alias.get("username"),
-                          alias.get("name"),
-                          alias.get("displayName"),
-                          alias.get("display_name")
-                      ])
-                  elif isinstance(alias, str):
-                      candidates.append(alias)
+              alias = entry.get("alias")
+              if isinstance(alias, dict):
+                  candidates.extend([
+                      alias.get("identifier"),
+                      alias.get("username"),
+                      alias.get("name"),
+                      alias.get("displayName"),
+                      alias.get("display_name")
+                  ])
+
+              player_alias = entry.get("playerAlias") or entry.get("player_alias")
+              if isinstance(player_alias, dict):
+                  candidates.extend([
+                      player_alias.get("identifier"),
+                      player_alias.get("username"),
+                      player_alias.get("name"),
+                      player_alias.get("displayName"),
+                      player_alias.get("display_name")
+                  ])
+              elif isinstance(player_alias, str):
+                  candidates.append(player_alias)
 
               player = entry.get("player")
               if isinstance(player, dict):
@@ -173,7 +214,6 @@ jobs:
               encoding="utf-8"
           )
 
-          # First run only seeds the current top 1 without spamming Discord.
           if not previous_top1_id:
               print("Initial top 1 state saved. No Discord notification sent.")
               raise SystemExit(0)
@@ -182,15 +222,13 @@ jobs:
               print("Top 1 unchanged. No Discord notification sent.")
               raise SystemExit(0)
 
-          lines = []
           medals = ["🥇", "🥈", "🥉"]
+          lines = []
 
           for index, entry in enumerate(top3):
               lines.append(
                   f"{medals[index]} **#{index + 1} {get_player_name(entry)}** — `{get_score(entry)}`"
               )
-
-          description = "\n".join(lines)
 
           payload = {
               "username": "Doomsoul Leaderboard",
@@ -201,7 +239,7 @@ jobs:
               "embeds": [
                   {
                       "title": "🏆 New Leaderboard Champion",
-                      "description": description,
+                      "description": "\n".join(lines),
                       "footer": {
                           "text": f"Leaderboard: {leaderboard_name}"
                       }
@@ -209,21 +247,25 @@ jobs:
               ]
           }
 
-          data = json.dumps(payload).encode("utf-8")
+          discord_data = json.dumps(payload).encode("utf-8")
 
-          req = urllib.request.Request(
-              os.environ["WEBHOOK_URL"],
-              data=data,
+          discord_req = urllib.request.Request(
+              discord_webhook_url,
+              data=discord_data,
               headers={
                   "Content-Type": "application/json",
                   "User-Agent": "DiscordBot (https://github.com/faelrisdev/doomsoul-updates, 1.0)"
               },
               method="POST"
           )
-          
-          with urllib.request.urlopen(req) as response:
-              if response.status not in (200, 204):
-                  raise SystemExit(f"Discord webhook failed: HTTP {response.status}")
+
+          try:
+              with urllib.request.urlopen(discord_req) as response:
+                  if response.status not in (200, 204):
+                      raise SystemExit(f"Discord webhook failed: HTTP {response.status}")
+          except urllib.error.HTTPError as e:
+              body = e.read().decode("utf-8", errors="replace")
+              raise SystemExit(f"Discord webhook failed: HTTP {e.code}: {body}")
 
           print("New top 1 notification sent.")
           PY
