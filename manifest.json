@@ -1,12 +1,12 @@
 {
-  "version": "0.2.7",
+  "version": "0.2.8",
   "minimumLauncherVersion": "0.0.0",
   "mandatory": true,
   "notes": [
-    "Corrected diamond rank reward threshold\n\nJoin our Discord: https://discord.gg/Eyx5p22tc\n\nThought of the patch:\nI fear not the man who has practiced 10,000 kicks once, but I fear the man who has practiced one kick 10,000 times."
+    "Corrected accounts bug\n\nJoin our Discord: https://discord.gg/Eyx5p22tc\n\nThought of the patch:\nThe best defense is attack."
   ],
   "package": {
-    "url": "https://github.com/faelrisdev/doomsoul-updates/releases/download/Alpha-0.2.7/Doomsoul.zip",
+    "url": "https://github.com/faelrisdev/doomsoul-updates/releases/download/Alpha-0.2.8/Doomsoul.zip",
     "sha256": "",
     "fileName": "Doomsoul_Windows.zip",
     "extractTo": "."
